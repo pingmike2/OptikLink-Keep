@@ -364,11 +364,11 @@ test('OptikLink 保活', async ({ }, testInfo) => {
         await serverPage.waitForTimeout(3000);
 
         const statusText = await serverPage.locator('p.sc-168cvuh-1').innerText().catch(() => '');
-        console.log(`📊 服务器状态：${statusText.trim()}`);
+        console.log(`💻 服务器状态：${statusText.trim()}`);
 
         if (statusText.toLowerCase().includes('running')) {
             console.log('🎉 保活成功！');
-            await sendTG('✅ 保活成功！\n📊 服务器状态：🚀 Running', serverInfo.name);
+            await sendTG('✅ 保活成功！\n💻 服务器状态：🚀 Running', serverInfo.name);
         } else if (statusText.toLowerCase().includes('offline')) {
             console.log('⚠️ 服务器离线，尝试启动...');
             await serverPage.click('button:has-text("Start")');
@@ -387,14 +387,14 @@ test('OptikLink 保活', async ({ }, testInfo) => {
 
             if (started) {
                 console.log('✅ 服务器已成功启动！');
-                await sendTG('🔄 Start 启动！\n📊 服务器状态：🚀 Running', serverInfo.name);
+                await sendTG('🔄 Start 启动！\n💻 服务器状态：🚀 Running', serverInfo.name);
             } else {
                 console.log('❌ 等待超时，服务器未能启动');
-                await sendTG('❌ Start 启动失败，等待超时\n📊 服务器状态：💤 Offline', serverInfo.name);
+                await sendTG('❌ Start 启动失败，等待超时\n💻 服务器状态：💤 Offline', serverInfo.name);
             }
         } else {
             console.log(`⚠️ 未知状态：${statusText.trim()}`);
-            await sendTG(`⚠️ 状态未知\n📊 服务器状态：❓ ${statusText.trim()}`, serverInfo.name);
+            await sendTG(`⚠️ 状态未知\n💻 服务器状态：❓ ${statusText.trim()}`, serverInfo.name);
         }
 
     } catch (e) {

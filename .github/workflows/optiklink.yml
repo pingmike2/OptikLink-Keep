@@ -15,25 +15,42 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: 📥 拉取私库代码
+      # =========================
+      # 📥 拉取私库（仅用于运行脚本）
+      # =========================
+      - name: 📥 Checkout Private Repo
         uses: actions/checkout@v4
         with:
           repository: ${{ github.repository_owner }}/OptikLink-Keep-Private
           token: ${{ secrets.PRIVATE_REPO_TOKEN }}
-          persist-credentials: true
-          fetch-depth: 0
+          path: private
+          fetch-depth: 1
 
+      # =========================
+      # 🟢 Node.js
+      # =========================
       - name: 🟢 安装 Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
+      # =========================
+      # 📦 安装依赖
+      # =========================
       - name: 📦 安装依赖
+        working-directory: private
         run: npm install
 
+      # =========================
+      # 🌐 安装 Playwright
+      # =========================
       - name: 🌐 安装 Playwright 浏览器
+        working-directory: private
         run: npx playwright install chromium --with-deps
 
+      # =========================
+      # 🛡️ 启动 GOST
+      # =========================
       - name: 🛡️ 启动 GOST 代理转发
         if: ${{ env.GOST_PROXY != '' }}
         env:
@@ -59,7 +76,11 @@ jobs:
           curl -s -x http://127.0.0.1:8080 https://api.ipify.org \
             | sed 's/\([0-9]*\.[0-9]*\.[0-9]*\.\)[0-9]*/\1**/g'
 
+      # =========================
+      # 🚀 执行 Playwright
+      # =========================
       - name: 🚀 运行保活脚本
+        working-directory: private
         env:
           DISCORD_ACCOUNT: ${{ secrets.DISCORD_ACCOUNT }}
           PANEL_ACCOUNT:   ${{ secrets.PANEL_ACCOUNT }}
@@ -67,18 +88,31 @@ jobs:
           GOST_PROXY:      http://127.0.0.1:8080
         run: npx playwright test
 
-      - name: 🕒 更新 time.txt 并提交
+      # =========================
+      # 📥 再拉取当前工作仓库
+      # =========================
+      - name: 📥 Checkout Current Repo
+        uses: actions/checkout@v4
+        with:
+          path: current
+          fetch-depth: 0
+
+      # =========================
+      # 🕒 更新时间文件并提交
+      # =========================
+      - name: 🕒 更新 time.txt 并提交到当前仓库
+        working-directory: current
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # 先同步远程，避免冲突
+          # 同步远程仓库
           git fetch origin main
           git reset --hard origin/main
 
-          # 更新时间文件
+          # 更新时间
           if [ ! -f time.txt ]; then
             echo "首次生成时间：$(date +'%Y-%m-%d %H:%M:%S')" > time.txt
           else
@@ -109,10 +143,13 @@ jobs:
             done
           fi
 
+      # =========================
+      # 📸 上传失败截图
+      # =========================
       - name: 📸 上传失败截图
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: failure-screenshots
-          path: test-results/
+          path: private/test-results/
           retention-days: 7
